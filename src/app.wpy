@@ -3,26 +3,30 @@ import wepy from 'wepy'
 import 'wepy-async-function'
 // import { service } from './config.js'
 
+// Form
+//  Button
+//  input
+
+// Ops Feedback
+//  Toast loading
+
+//  Msg
+// Basic
+//  Footer
+//  Progress
+//  Icon
 export default class extends wepy.app {
   config = {
     pages: [
       'pages/index',
-      'pages/main/search',
-      'pages/main/list',
-      'pages/main/detail',
-
-      'pages/borrow',
-      'pages/borrow/subscribe',
-      'pages/borrow/result',
-
-      'pages/user',
-      'pages/user/borrow',
-      'pages/user/return',
-      'pages/user/collect',
-      'pages/user/subscribe'
+      'pages/user/index'
+      // 'pages/user/history',
+      // 'pages/power/order',
+      // 'pages/power/countdown',
+      // 'pages/power/review'
     ],
     window: {
-      navigationBarTitleText: 'BookMall',
+      navigationBarTitleText: 'AcePower',
       navigationBarTextStyle: 'white',
       navigationBarBackgroundColor: '#049BFF',
       backgroundColor: '#eaeaea',
@@ -40,12 +44,7 @@ export default class extends wepy.app {
         iconPath: './images/tabbars/icon-mark@2x.png',
         text: '首页'
       }, {
-        pagePath: 'pages/borrow',
-        selectedIconPath: './images/tabbars/icon-shelf-active@2x.png',
-        iconPath: './images/tabbars/icon-shelf@2x.png',
-        text: '书架'
-      }, {
-        pagePath: 'pages/user',
+        pagePath: 'pages/user/index',
         selectedIconPath: './images/tabbars/icon-smile-active@2x.png',
         iconPath: './images/tabbars/icon-smile@2x.png',
         text: '我的'

@@ -43,9 +43,9 @@
 <script>
   import wepy from 'wepy'
   // import { service } from '../config.js'
-  import http from '../mixins/http'
-  import base from '../mixins/base'
-  import user from '../mixins/user'
+  import http from '../../mixins/http'
+  import base from '../../mixins/base'
+  import user from '../../mixins/user'
 
   export default class pageUser extends wepy.page {
     mixins = [base, http, user]
@@ -57,7 +57,7 @@
       userInfo: {
         nickName: '加载中...',
         // 头像占位图
-        avatarUrl: '../images/icon/icon-avatar@2x.png',
+        avatarUrl: '../../images/icon/icon-avatar@2x.png',
 
         packages: {
           times: 0,
@@ -116,7 +116,7 @@
 </script>
 
 <style lang="less">
-@import "../styles/custom/fn.less";
+@import "../../styles/custom/fn.less";
 
 .page-user{
 

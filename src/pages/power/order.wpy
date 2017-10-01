@@ -1,71 +1,63 @@
+
 <template>
-  <view class="borrow-result tip-page">
-
-    <block wx:if="{{type == 0}}">
-      <icon class="tip-icon" type="success" size="70" color="#049BFF"></icon>
-      <view class="h3 color-blue">借阅成功</view>
-      <view class="h4 color-999">
-        <view>寻寻觅觅 冷冷清清 凄凄惨惨戚戚</view>
-        <view>乍暖还寒时候 最难将息</view>
+  <view class="page">
+    <view class="page__hd">
+      <view class="page__title">订单详情</view>
+    </view>
+    <view class="page__bd">
+      <view class="weui-form-preview">
+        <view class="weui-form-preview__hd">
+          <view class="weui-form-preview__item">
+            <view class="weui-form-preview__label">付款金额</view>
+            <view class="weui-form-preview__value_in-hd">¥6.00</view>
+          </view>
+        </view>
+        <view class="weui-form-preview__bd">
+          <view class="weui-form-preview__item">
+            <view class="weui-form-preview__label">订单号</view>
+            <view class="weui-form-preview__value">
+              aaa-bbb-ccc
+            </view>
+          </view>
+          <view class="weui-form-preview__item">
+            <view class="weui-form-preview__label">使用时长</view>
+            <view class="weui-form-preview__value">45 min</view>
+          </view>
+          <view class="weui-form-preview__item">
+            <view class="weui-form-preview__label">地点</view>
+            <view class="weui-form-preview__value">
+             广州四季酒店 
+            </view>
+          </view>
+          <view class="weui-form-preview__item">
+            <view class="weui-form-preview__label">设备号</view>
+            <view class="weui-form-preview__value">
+             xxx-yyy-zzz
+            </view>
+          </view>
+        </view>
       </view>
-      <button @tap="jump" class="weui-btn mini-btn" type="default" size="mini">查看订单</button>
-    </block><block wx:else>
-      <icon class="tip-icon" type="warn" size="70"></icon>
-      <view class="h3 color-blue">借阅失败</view>
-      <view class="h4 color-999">
-        <view>{{message}}</view>
-      </view>
-      <button @tap="back" class="weui-btn mini-btn" type="primary" size="mini">{{buttonText}}</button>
-    </block>
-
+      <view class="weui-msg">
+          <view class="weui-msg__opr-area">
+              <view class="weui-btn-area">
+                  <button class="weui-btn" type="primary">支付</button>
+              </view>
+          </view>
+        </view>
+    </view>
   </view>
 </template>
 
+<style>
+</style>
+
 <script>
   import wepy from 'wepy'
-  import base from '../../mixins/base'
 
-  export default class borrowResult extends wepy.page {
-    mixins = [base]
+  export default class Order extends wepy.page {
     config = {
-      navigationBarTitleText: '提示',
-      enablePullDownRefresh: false
-    }
-    data = {
-      // type: 0成功, 失败 > 0
-      type: 0,
-      message: '',
-
-      // 错误提示的文案
-      buttonText: '重新借阅'
-    }
-
-    onLoad(query) {
-      const type = query && +query.type
-      const message = query && query.message
-      this.type = this.getNumber(type)
-      this.message = message || '发生了一些异常，再试一次！'
-    }
-
-    methods = {
-      jump() {
-        wx.redirectTo({url: '/pages/user/borrow'})
-      },
-      back() {
-        wx.navigateBack({delta: 1})
-      }
-    }
-
-    components = {
+      navigationBarTitleText: '确认订单'
     }
   }
-</script>
 
-<style lang="less">
-@import "../../styles/custom/fn.less";
-page{
-  background: #fff;
-}
-.borrow-result{
-}
-</style>
+</script>

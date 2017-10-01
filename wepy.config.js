@@ -12,9 +12,9 @@ module.exports = {
   },
   eslint: true,
   compilers: {
-    /*less: {
+    less: {
       compress: true
-    },*/
+    },
     sass: {
       outputStyle: 'compressed'
     },

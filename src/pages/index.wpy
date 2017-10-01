@@ -1,25 +1,47 @@
 <template>
   <view class="page-index">
-    <SearchBar :placeholder="searchText"></SearchBar>
-    <Swiper :list.sync="swipers" height="280"></Swiper>
-    <Category :list.sync="categorys" col="4"></Category>
-    <BookList :list.sync="list" title="图书列表"
-     :loading.sync="loading" :noMore.sync="noMoreList"></BookList>
+    <view class="weui-msg">
+      <view class="weui-msg__icon-area">
+        <image src="/images/acepower.png" mode="aspectFit" style="width: 320rpx; height: 240rpx;"></image>
+      </view>
+      <view class="weui-msg__text-area">
+        <view class="weui-msg__title">Ace Power</view>
+        <view class="weui-msg__desc">
+        </view>
+      </view>
+      <view class="weui-msg__opr-area">
+        <view class="weui-btn-area">
+          <button class="weui-btn" type="primary">扫描使用</button>
+        </view>
+      </view>
+      <view class="weui-msg__extra-area">
+        <view class="weui-footer">
+          <view class="weui-footer__links">
+            <navigator url="" class="weui-footer__link">天南科技</navigator>
+          </view>
+          <view class="weui-footer__text">Copyright © 2017-2018 tinaam.com</view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script>
   import wepy from 'wepy'
-  import { service } from '../config.js'
+  import {
+    service
+  } from '../config.js'
   import base from '../mixins/base'
   import http from '../mixins/http'
-  import { funImages } from '../mixins/demo'
+  import {
+    funImages
+  } from '../mixins/demo'
   import Swiper from '../components/swiper'
   import SearchBar from '../components/searchbar'
   import Category from '../components/category'
   import BookList from '../components/bookList'
 
-  export default class pageIndex extends wepy.page {
+  export default class HomeIndex extends wepy.page {
     mixins = [base, http]
     config = {
       navigationBarTitleText: '首页',
@@ -30,13 +52,27 @@
       searchText: 'book',
       swipers: [
         // 占位图，防止请求错误无图显示
-        {image: '/images/swiper.png', url: '/pages/main/search'}
+        {
+          image: '/images/swiper.png',
+          url: '/pages/main/search'
+        }
       ],
-      categorys: [
-        {title: '今', image: funImages[0]},
-        {title: '晚', image: funImages[1]},
-        {title: '吃', image: funImages[2]},
-        {title: '鸡', image: funImages[3]}
+      categorys: [{
+          title: '今',
+          image: funImages[0]
+        },
+        {
+          title: '晚',
+          image: funImages[1]
+        },
+        {
+          title: '吃',
+          image: funImages[2]
+        },
+        {
+          title: '鸡',
+          image: funImages[3]
+        }
       ],
 
       noMoreList: false,
@@ -70,11 +106,14 @@
       this.updateBookList(this.page)
 
       // 处理轮播图
-      this.swipers.push({image: '/images/swiper.png'})
+      this.swipers.push({
+        image: '/images/swiper.png'
+      })
       // 处理菜单栏
       this.categorys.map((cate, index) => {
         const xnum = Math.min(Math.max(index, 1), 3)
-        cate.url = `/pages/main/search?params=${this.$json({
+        cate.url =
+          `/pages/main/search?params=${this.$json({
           value: [xnum, 4 - xnum].map(item => this.getString(item)),
           index: index + 1,
           title: cate.title
@@ -95,7 +134,10 @@
           size: this.size
         }
       }, {
-        success: ({code, data}) => {
+        success: ({
+          code,
+          data
+        }) => {
           // 示例规则：最多20本
           if (this.list.length >= 20) {
             this.noMoreList = true
@@ -119,7 +161,10 @@
           // 成功了就增加一页
           this.page += 1
         },
-        fail: ({code, data}) => {
+        fail: ({
+          code,
+          data
+        }) => {
           // 失败了什么也不做
         },
         complete: () => {
@@ -145,8 +190,7 @@
       })
     }
 
-    methods = {
-    }
+    methods = {}
 
     components = {
       SearchBar,
@@ -155,10 +199,12 @@
       Swiper
     }
   }
+
 </script>
 
 <style lang="less">
-.page-index{
-  // some style
-}
+  page {
+    background-color: #FFFFFF;
+  }
+
 </style>

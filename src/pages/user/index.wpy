@@ -4,7 +4,7 @@
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell">
           <view class="weui-cell__bd userinfo clearfix">
-            <image class="userinfo-avatar" src="{{ userInfo.avatarUrl }}" background-size="cover"/>
+            <image class="userinfo-avatar" src="{{ userInfo.avatarUrl }}" background-size="cover" />
             <view class="userinfo-info">
               <view class="userinfo-nickname">{{ nickName }}</view>
               <view class="userinfo-status">{{identity.type}}</view>
@@ -13,28 +13,29 @@
         </view>
       </view>
     </view>
-    <view class="weui-panel">
-      <view class="weui-cells weui-cells_after-title">
-        <navigator url="/pages/user/subscribe" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
-          <view class="weui-cell__bd">我的订阅</view>
-          <view class="weui-cell__ft weui-cell__ft_in-access">
-            <text>还可借</text>
-            <text class="color-green">{{packages.times}}</text>
-            <text>次</text>
-          </view>
-        </navigator>
-        <navigator url="/pages/user/borrow" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
-          <view class="weui-cell__bd">我的借阅</view>
-          <view class="weui-cell__ft weui-cell__ft_in-access">
-            <text class="color-green">{{packages.status}}</text>
-          </view>
-        </navigator>
-        <navigator url="/pages/user/collect" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
-          <view class="weui-cell__bd">收藏图书</view>
-          <view class="weui-cell__ft weui-cell__ft_in-access">
-            <text class="color-green">{{identity.collection || '0'}}</text>
-          </view>
-        </navigator>
+    <view class="weui-panel weui-panel_access">
+      <view class="weui-panel__hd">使用记录</view>
+      <view class="weui-panel__bd">
+        <view class="weui-cells weui-cells_after-title">
+          <navigator url="/pages/user/history" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+            <view class="weui-cell__bd">正在使用中</view>
+            <view class="weui-cell__ft weui-cell__ft_in-access">
+              <view class="weui-badge">2</view>
+            </view>
+          </navigator>
+          <navigator url="/pages/user/history" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+            <view class="weui-cell__bd">过往记录</view>
+            <view class="weui-cell__ft weui-cell__ft_in-access"></view>
+          </navigator>
+        </view>
+      </view>
+    </view>
+    <view class="weui-msg__extra-area">
+      <view class="weui-footer">
+        <view class="weui-footer__links">
+          <navigator url="" class="weui-footer__link">天南科技</navigator>
+        </view>
+        <view class="weui-footer__text">Copyright © 2017-2018 tinaam.com</view>
       </view>
     </view>
   </view>
@@ -47,7 +48,7 @@
   import base from '../../mixins/base'
   import user from '../../mixins/user'
 
-  export default class pageUser extends wepy.page {
+  export default class UserIndex extends wepy.page {
     mixins = [base, http, user]
     config = {
       navigationBarTitleText: '我的',
@@ -107,51 +108,46 @@
       // })
     }
 
-    methods = {
-    }
+    methods = {}
 
-    components = {
-    }
+    components = {}
   }
+
 </script>
 
 <style lang="less">
-@import "../../styles/custom/fn.less";
+  @import "../../styles/custom/fn.less";
 
-.page-user{
+  .page-user {
 
-  @userinfoHeight: 100rpx;
-  @userinfoSpace: 8rpx;
+    @userinfoHeight: 100rpx;
+    @userinfoSpace: 8rpx;
 
-  .userinfo{
-    padding: 20rpx 0;
+    .userinfo {
+      padding: 20rpx 0;
+    }
+
+    .userinfo-avatar {
+      float: left;
+      width: @userinfoHeight;
+      height: @userinfoHeight;
+      border-radius: 50%;
+    } // space + space
+    .userinfo-info {
+      float: left;
+      line-height: 1;
+      padding: @userinfoSpace 0;
+      margin-left: 3 * @userinfoSpace;
+    } // text + space + text
+    .userinfo-nickname {
+      color: @uiColorGreen;
+      font-size: (@userinfoHeight - 4 * @userinfoSpace) * (16 / 30);
+      margin-bottom: 2 * @userinfoSpace;
+    }
+    .userinfo-status {
+      color: #999;
+      font-size: (@userinfoHeight - 4 * @userinfoSpace) * (14 / 30);
+    }
   }
 
-  .userinfo-avatar {
-    float: left;
-    width: @userinfoHeight;
-    height: @userinfoHeight;
-    border-radius: 50%;
-  }
-
-  // space + space
-  .userinfo-info {
-    float: left;
-    line-height: 1;
-    padding: @userinfoSpace 0;
-    margin-left: 3 * @userinfoSpace;
-  }
-
-  // text + space + text
-  .userinfo-nickname {
-    color: @uiColorGreen;
-    font-size: (@userinfoHeight - 4 * @userinfoSpace) * (16 / 30);
-    margin-bottom: 2 * @userinfoSpace;
-  }
-  .userinfo-status {
-    color: #999;
-    font-size: (@userinfoHeight - 4 * @userinfoSpace) * (14 / 30);
-
-  }
-}
 </style>

@@ -79,7 +79,7 @@
       navigationBarTitleText: '使用中'
     }
     data = {
-      arcCtx: wx.createCanvasContext('canvasArc'),
+      arcCtx: wepy.createCanvasContext('canvasArc'),
       remainSec: 45 * 60,
       remainSecCount: 0,
       checkIntervalSec: 60,
@@ -115,9 +115,9 @@
     }
 
     onReady() {
-      let circleCtx = wx.createCanvasContext('canvasCircle')
-      circleCtx.setLineWidth(6)
-      circleCtx.setStrokeStyle('#eaeaea')
+      let circleCtx = wepy.createCanvasContext('canvasCircle')
+      circleCtx.setLineWidth(5)
+      circleCtx.setStrokeStyle('#049BFF')
       circleCtx.setLineCap('round')
       circleCtx.beginPath()
       circleCtx.arc(this.centerX, this.centerY, this.radius, 0, 2 * Math.PI, false)
@@ -131,8 +131,8 @@
       this.arcCtx.setFillStyle('white')
       this.arcCtx.clearRect(0, 0, 200, 200)
       this.arcCtx.draw()
-      this.arcCtx.setLineWidth(5)
-      this.arcCtx.setStrokeStyle('#049BFF')
+      this.arcCtx.setLineWidth(6)
+      this.arcCtx.setStrokeStyle('#eaeaea')
       this.arcCtx.setLineCap('round')
       this.arcCtx.beginPath()
       // void ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);

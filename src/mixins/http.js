@@ -1,101 +1,71 @@
 import wepy from 'wepy'
 
 export default class httpMixin extends wepy.mixin {
-  /* =================== [$get 发起GET请求] =================== */
   $get(
-    {url = '', headers = {}, data = {} }, 
-    {success = () => {}, fail = () => {}, complete = () => {} }
+    {url = '', headers = {}, data = {} }
   ) {
-    const methods = 'GET'
-    this.$ajax(
-      {url, headers, methods, data}, 
-      {success, fail, complete }
+    const method = 'GET'
+    return this.$ajax(
+      {url, headers, method, data}
     )
   }
 
-  /* =================== [$post 发起POST请求] =================== */
   $post(
-    {url = '', headers = {}, data = {} }, 
-    {success = () => {}, fail = () => {}, complete = () => {} }
+    {url = '', headers = {}, data = {} }
   ) {
-    const methods = 'POST'
-    this.$ajax(
-      {url, headers, methods, data}, 
-      {success, fail, complete }
+    const method = 'POST'
+    return this.$ajax(
+      {url, headers, method, data}
     )
   }
 
-  /**
-   * [ajax 统一请求方法]
-   * @param  {[type]}  item [description]
-   * @return {Boolean}      [description]
-   */
   $ajax(
-    {url = '', headers = {}, methods = 'GET', data = {} }, 
-    {success = () => {}, fail = () => {}, complete = () => {} }
+    {url = '', headers = {}, method = 'GET', data = {} }
   ) {
-    // 增强体验：加载中
-    wx.showNavigationBarLoading()
-
-    // 构造请求体
+    wepy.showNavigationBarLoading()
+    // http header globally
+    // set jwt header
+    let httpHeaders = {}
+    try {
+      let token = wx.getStorageSync('jwt')
+      if (token) {
+        httpHeaders.Authorization = `Bearer ${token}`
+      }
+    } catch (e) {
+      // ignore for the time being
+    }
     const request = {
       url,
-      method: ['GET', 'POST'].indexOf(methods) > -1 ? methods : 'GET',
-      header: Object.assign({
-        // set something global
-      }, headers),
+      method: ['GET', 'POST'].indexOf(method) > -1 ? method : 'GET',
+      header: Object.assign(httpHeaders, headers),
       data: Object.assign({
         // set something global
       }, data)
     }
 
-    // 控制台调试日志
+    // show console log
     console.table(request)
 
-    // 发起请求
-    wepy.request(Object.assign(request, {
-      success: ({ statusCode, data }) => {
-        // 控制台调试日志
-        console.log('[SUCCESS]', statusCode, typeof data === 'object' ? data : data.toString().substring(0, 100))
-
-        // 状态码正常 & 确认有数据
-        if (0 === +data.code && data.data) {
-          // 成功回调
-          return setTimeout(() => {
-            this.isFunction(success) && success({statusCode, ...data})
-            this.$apply()
-          })
+    return wepy.request(request)
+      .then(({statusCode, data}) => {
+        if (statusCode<200 || statusCode>300) {
+          // I think wx is not that smart..., 400 is consider to go here
+          throw {statusCode, data}
         }
-
-        // 失败回调：其他情况
-        return setTimeout(() => {
-          this.isFunction(fail) && fail({statusCode, ...data})
-          this.$apply()
-        })
-      },
-      fail: ({ statusCode, data }) => {
-        // 控制台调试日志
-        console.log('[FAIL]', statusCode, data)
-        // 失败回调
-        return setTimeout(() => {
-          this.isFunction(fail) && fail({statusCode, ...data})
-          this.$apply()
-        })
-      },
-      complete: (res) => {
-        // 控制台调试日志
+        console.info('[SUCCESS]', statusCode, typeof data === 'object'? data: data.toString().substring(0, 100))
+        return {statusCode, data}
+      })
+      .catch((error) => {
+        console.error('[FAIL]', error)
+        // maybe 403 we so a msg before refresh the page 
+        throw error
+      })
+      .finally((res) => {
         console.log('[COMPLETE]', res)
-        // 隐藏加载提示
-        wx.hideNavigationBarLoading()
-        // 停止下拉状态
-        wx.stopPullDownRefresh()
-        // 完成回调
-        return (() => {
-          this.isFunction(complete) && complete(res)
-          this.$apply()
-        })()
-      }
-    }))
+        wepy.hideNavigationBarLoading()
+        wepy.stopPullDownRefresh()
+        this.$apply()
+      })
   }
 }
 

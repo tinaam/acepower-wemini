@@ -1,6 +1,27 @@
 <script>
 import wepy from 'wepy'
 import 'wepy-async-function'
+
+// patch Promise with a finally
+// refer to
+// https://www.promisejs.org/api/#epqg9ttd
+// https://stackoverflow.com/questions/35999072/what-is-the-equivalent-of-bluebird-promise-finally-in-native-es6-promises
+/* eslint no-extend-native: ["error", { "exceptions": ["Promise"] }] */
+Promise.prototype.finally = function(cb) {
+  const res = () => this
+  const fin = (value) => Promise.resolve(cb(value)).then(res)
+  return this.then(fin, fin)
+  // return this.then(function (value) {
+  //   return Promise.resolve(cb(value)).then(function () {
+  //     return value
+  //   })
+  // }, function (err) {
+  //   return Promise.resolve(cb(err)).then(function () {
+  //     throw err
+  //   })
+  // })
+}
+
 // import { service } from './config.js'
 
 // Form
@@ -65,6 +86,7 @@ export default class extends wepy.app {
   constructor () {
     super()
     this.use('requestfix')
+    this.use('promisify')
   }
 
   onLaunch() {

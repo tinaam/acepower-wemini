@@ -1,26 +1,14 @@
 /* ========================================================
-                        小程序配置文件
+                        some config file
 ======================================================== */
 
-// 域名
-// var host = 'http://127.0.0.1:3000';
-var host = 'https://wxapp.thunf.cn';
+let domain = 'http://127.0.0.1:8090'
+// let domain = 'https://wxapp.thunf.cn'
+let baseUrl = `${domain}/api/v1`
+let source = 'wx'
 
-// 下面的地址配合云端 Demo 工作
-export const service = {
-  // 列表接口 GET
-  list: `${host}/bookmall/list`,
-
-  // 筛选页接口 GET 
-  tags: `${host}/bookmall/tags`,
-
-  // 假装有收藏接口 POST
-  collect: `${host}/bookmall/list`,
-
-  // 主域
-  host
-}
-
-export default {
-  service
+export default{
+  domain,
+  baseUrl,
+  source
 }

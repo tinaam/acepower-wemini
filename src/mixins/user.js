@@ -1,10 +1,28 @@
 import wepy from 'wepy'
-import config from '../config.js'
+import config from '../config'
+import {httpPost} from './http'
 
 export default class userMixin extends wepy.mixin {
   isFunction(item) {
     // no re-use within mixin, may as well rewrite it once more
     return typeof item === 'function'
+  }
+  // helper method for page action after user login
+  // TODO
+  $ensureLogin() {
+    if (!this.$parent || !this.$parent.$updateGlobalData) {
+      // for error config
+      return Promise.reject('Error config, should be used in a component')
+    }
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if(this.$parent.globalData.loginInited){
+          resolve()
+        } else {
+          resolve( this.$ensureLogin() )
+        }
+      }, 100)
+    })
   }
 
   $getUserInfo() {
@@ -15,7 +33,7 @@ export default class userMixin extends wepy.mixin {
     // from cache
     const user = this.$parent.$updateGlobalData('user')
     // no more ajax request
-    if (user && user.nickName) {
+    if (user && user.nickname) {
       return Promise.resolve(user)
     }
     
@@ -37,7 +55,7 @@ export default class userMixin extends wepy.mixin {
     return wepy.login()
       .then((res) => {
         console.log('wepy.login.success:', res)
-        return this.$post({ url: `${config.baseUrl}/auth/code-to-token`, 
+        return httpPost({ url: '/auth/code-to-token', 
           data: {
             code: res.code,
             source: config.source
@@ -55,7 +73,7 @@ export default class userMixin extends wepy.mixin {
       .then((res) => {
         console.log('wepy.getUserInfo.success:', res)
         // sync with backend server and use result from backend server as validated data
-        return this.$post({ url: `${config.baseUrl}/account/encrypted-profile`, 
+        return this.$post({ url: `/account/encrypted-profile`, 
           data: {
             encrypted_data: res.encryptedData,
             iv: res.iv
@@ -68,7 +86,7 @@ export default class userMixin extends wepy.mixin {
       }).catch((res) => {
         console.log('wepy.getUserInfo.fail:', res)
         const user = this.$parent.$updateGlobalData('user', {
-          nickName: '未授权',
+          nickname: '未授权',
           avatarUrl: '/images/icon/icon-avatar@2x.png'
         })
         // maybe user just not granting userInfo

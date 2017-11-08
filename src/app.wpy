@@ -1,6 +1,7 @@
 <script>
 import wepy from 'wepy'
 import 'wepy-async-function'
+import UserUtil from './mixins/user'
 
 // patch Promise with a finally
 // refer to
@@ -79,6 +80,7 @@ export default class extends wepy.app {
   }
 
   globalData = {
+    loginInited: false,
     user: null,
     cart: null
   }
@@ -90,6 +92,11 @@ export default class extends wepy.app {
   }
 
   onLaunch() {
+    // login first, may lead to login twice for the time being
+    return new UserUtil().$login()
+            .then(() => {
+              this.globalData.loginInited = true
+            })
   }
 
   onShow(options) {

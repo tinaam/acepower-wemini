@@ -5,6 +5,7 @@
       <view class="page__title">订单详情</view>
     </view>
     <view class="page__bd">
+    <view wx:if="{{!loading}}">
       <view class="weui-form-preview">
         <view class="weui-form-preview__hd">
           <view class="weui-form-preview__item">
@@ -13,12 +14,6 @@
           </view>
         </view>
         <view class="weui-form-preview__bd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">订单号</view>
-            <view class="weui-form-preview__value">
-              aaa-bbb-ccc
-            </view>
-          </view>
           <view class="weui-form-preview__item">
             <view class="weui-form-preview__label">使用时长</view>
             <view class="weui-form-preview__value">45 min</view>
@@ -44,6 +39,7 @@
               </view>
           </view>
         </view>
+      </view>
     </view>
   </view>
 </template>
@@ -53,10 +49,39 @@
 
 <script>
   import wepy from 'wepy'
+  import http from '../../mixins/http'
+  import user from '../../mixins/user'
 
   export default class Order extends wepy.page {
+    mixins = [http, user]
     config = {
-      navigationBarTitleText: '确认订单'
+      navigationBarTitleText: '确认支付'
+    }
+    data = {
+      loading: true
+    }
+    onLoad(params) {
+      this.$ensureLogin()
+        .then(() => {
+          return this.$get({
+            url: '/oscar/assetlocation/status',
+            data: params
+          })
+        })
+        .then(({data}) => {
+          console.info('response', data)
+        }).finally((res) => {
+          console.info(res)
+          wepy.hideLoading()
+          this.setData({loading: false})
+        })
+    }
+    onReady() {
+      if (this.loading) {
+        wepy.showLoading({
+          title: 'Loading...'
+        })
+      }
     }
   }
 

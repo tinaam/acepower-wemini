@@ -61,6 +61,15 @@ if (prod) {
           quality: 80
         }
       }
+    },
+    replace: {
+      filter: /.*\.js$/,
+      config: {
+          find: /http:\/\/127.0.0.1:8090/g,
+          replace: function (matchs, word) {
+              return 'https://acepower.tinaam.com'
+          }
+      }
     }
   }
 }

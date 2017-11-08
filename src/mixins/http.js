@@ -1,26 +1,28 @@
 import wepy from 'wepy'
+import config from '../config'
 
+console.info('baseUrl', config.baseUrl)
 export default class httpMixin extends wepy.mixin {
   $get(
-    {url = '', headers = {}, data = {} }
+    {url = '', headers = {}, data = {}, baseUrl=config.baseUrl}
   ) {
     const method = 'GET'
     return this.$ajax(
-      {url, headers, method, data}
+      {url, headers, method, data, baseUrl}
     )
   }
 
   $post(
-    {url = '', headers = {}, data = {} }
+    {url = '', headers = {}, data = {}, baseUrl=config.baseUrl }
   ) {
     const method = 'POST'
     return this.$ajax(
-      {url, headers, method, data}
+      {url, headers, method, data, baseUrl}
     )
   }
 
   $ajax(
-    {url = '', headers = {}, method = 'GET', data = {} }
+    {url = '', headers = {}, method = 'GET', data = {}, baseUrl=config.baseUrl }
   ) {
     wepy.showNavigationBarLoading()
     // http header globally
@@ -34,8 +36,9 @@ export default class httpMixin extends wepy.mixin {
     } catch (e) {
       // ignore for the time being
     }
+    
     const request = {
-      url,
+      url: `${baseUrl}${url}`,
       method: ['GET', 'POST'].indexOf(method) > -1 ? method : 'GET',
       header: Object.assign(httpHeaders, headers),
       data: Object.assign({

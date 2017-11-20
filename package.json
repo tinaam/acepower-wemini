@@ -11,6 +11,7 @@
   "author": "Ace Han",
   "license": "Tinaam Reserved",
   "dependencies": {
+    "js-base64": "^2.3.2",
     "wepy": "^1.5.8",
     "wepy-async-function": "^1.4.4",
     "wepy-com-toast": "^1.0.2"

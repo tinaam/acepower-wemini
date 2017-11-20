@@ -1,11 +1,24 @@
 import wepy from 'wepy'
 import config from '../config'
 import {httpPost} from './http'
+import { Base64 } from 'js-base64'
+
+
 
 export default class userMixin extends wepy.mixin {
   isFunction(item) {
     // no re-use within mixin, may as well rewrite it once more
     return typeof item === 'function'
+  }
+
+  static getTokenPayload(thing) {
+    let token = wepy.getStorageSync('jwt')
+    if (!token){
+      return null
+    }
+    let payload = token.split('.')[1]
+    payload = JSON.parse(Base64.decode(payload))
+    return payload
   }
   // helper method for page action after user login
   // TODO

@@ -9,7 +9,7 @@ function httpAjax (
   // set jwt header
   let httpHeaders = {}
   try {
-    let token = wx.getStorageSync('jwt')
+    let token = wepy.getStorageSync('jwt')
     if (token) {
       httpHeaders.Authorization = `Bearer ${token}`
     }
@@ -48,6 +48,7 @@ function httpAjax (
       wepy.hideNavigationBarLoading()
       wepy.stopPullDownRefresh()
       if (this && this.$apply){
+        console.info('with this')
         this.$apply()
       }
     })
@@ -57,7 +58,7 @@ function httpGet (
   {url = '', headers = {}, data = {}, baseUrl=config.baseUrl}
 ){
   const method = 'GET'
-  return httpAjax(
+  return httpAjax.call(this,
     {url, headers, method, data, baseUrl}
   )
 }
@@ -66,15 +67,21 @@ function httpPost (
   {url = '', headers = {}, data = {}, baseUrl=config.baseUrl}
 ){
   const method = 'POST'
-  return httpAjax(
+  return httpAjax.call(this,
     {url, headers, method, data, baseUrl}
   )
 }
 
 class httpMixin extends wepy.mixin {
-  $get = httpGet
-  $post = httpPost
-  $ajax = httpAjax
+  $get (params) {
+    return httpGet.call(this, params)
+  }
+  $post (params) {
+    return httpPost.call(this, params)
+  }
+  $ajax (params) {
+    return httpAjax.call(this, params)
+  } 
 }
 
 export {

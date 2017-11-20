@@ -10,24 +10,24 @@
         <view class="weui-form-preview__hd">
           <view class="weui-form-preview__item">
             <view class="weui-form-preview__label">付款金额</view>
-            <view class="weui-form-preview__value_in-hd">¥6.00</view>
+            <view class="weui-form-preview__value_in-hd">{{total_incl_tax}}</view>
           </view>
         </view>
         <view class="weui-form-preview__bd">
           <view class="weui-form-preview__item">
             <view class="weui-form-preview__label">使用时长</view>
-            <view class="weui-form-preview__value">45 min</view>
+            <view class="weui-form-preview__value">{{unit_duration_min}} min</view>
           </view>
           <view class="weui-form-preview__item">
             <view class="weui-form-preview__label">地点</view>
             <view class="weui-form-preview__value">
-             广州四季酒店 
+             {{asset_location.line2}}
             </view>
           </view>
           <view class="weui-form-preview__item">
             <view class="weui-form-preview__label">设备号</view>
             <view class="weui-form-preview__value">
-             xxx-yyy-zzz
+             {{asset_location.code}}
             </view>
           </view>
         </view>
@@ -35,7 +35,7 @@
       <view class="weui-msg">
           <view class="weui-msg__opr-area">
               <view class="weui-btn-area">
-                  <button class="weui-btn" type="primary">支付</button>
+                  <button class="weui-btn" type="primary" @tap="checkout">支付</button>
               </view>
           </view>
         </view>
@@ -51,6 +51,7 @@
   import wepy from 'wepy'
   import http from '../../mixins/http'
   import user from '../../mixins/user'
+  import config from '../../config'
 
   export default class Order extends wepy.page {
     mixins = [http, user]
@@ -58,8 +59,14 @@
       navigationBarTitleText: '确认支付'
     }
     data = {
-      loading: true
+      loading: true,
+      total_incl_tax: 0.0,
+      unit_duration_min: 45,
+      asset_location: {},
+      basket_id: -1,
+      order: null
     }
+    computed = {}
     onLoad(params) {
       this.$ensureLogin()
         .then(() => {
@@ -70,10 +77,30 @@
         })
         .then(({data}) => {
           console.info('response', data)
+          if (data.occupied) {
+            let userId = this.getTokenPayload().user_id
+            if (userId === data.occupied_by) {
+              wepy.redirectTo({
+                url: 'pages/power/countdown'
+              })
+            }
+          }
+          console.info('sending another request to reserve this assetlocation')
+          let previewParams = Object.assign({unit_duration_min: 45}, params)
+          return this.$post({
+            url: '/oscar/basket/preview',
+            data: previewParams
+          })
+        }).then(({data}) => {
+          this.basket_id = data.id
+          this.total_incl_tax = data.total_incl_tax
+          this.asset_location = data.lines[0].asset_location
+          console.info('preview is done')
         }).finally((res) => {
-          console.info(res)
           wepy.hideLoading()
-          this.setData({loading: false})
+          this.loading = false
+          // dont know why it mixin http does not work
+          this.$apply()
         })
     }
     onReady() {
@@ -82,6 +109,54 @@
           title: 'Loading...'
         })
       }
+    }
+    methods = {
+      checkout () {
+        // this.$post({
+        //   url: '/oscar/assetlocation/status',
+        //   data: params
+        // })
+        this.placeOrder()
+          .then(({data}) => {
+            // launch_payment_request
+            console.info('order launch payment url', data, `${config.domain}${data.payment_url}`)
+            return this.$post({
+              url: data.payment_url,
+              baseUrl: config.domain
+            })
+          })
+          .catch(() => {
+            // launch_payment_failure
+          })
+          .finally(() => {
+            wepy.hideLoading()
+            this.loading = false
+            this.$apply()
+          })
+          .then(({data}) => {
+            // launch wx payment dialog
+            console.info('launch wx payment dialog')
+          })
+      }
+    }
+
+    placeOrder () {
+      if (this.order) {
+        return Promise.resolve(this.order)
+      }
+      let params = {
+        basket: `${config.baseUrl}/oscar/baskets/${this.basket_id}/`,
+        total: this.total_incl_tax,
+        shipping_method_code: 'commence-down'
+      }
+
+      return this.$post({
+        url: '/oscar/asset/checkout',
+        data: params
+      }).then((data) => {
+        this.order = data
+        return data
+      })
     }
   }
 

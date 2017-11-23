@@ -5,40 +5,41 @@
       <view class="page__title">订单详情</view>
     </view>
     <view class="page__bd">
-    <view wx:if="{{!loading}}">
-      <view class="weui-form-preview">
-        <view class="weui-form-preview__hd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">付款金额</view>
-            <view class="weui-form-preview__value_in-hd">{{total_incl_tax}}</view>
-          </view>
-        </view>
-        <view class="weui-form-preview__bd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">使用时长</view>
-            <view class="weui-form-preview__value">{{unit_duration_min}} min</view>
-          </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">地点</view>
-            <view class="weui-form-preview__value">
-             {{asset_location.line2}}
+      <view wx:if="{{!loading}}">
+        <view class="weui-form-preview">
+          <view class="weui-form-preview__hd">
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">付款金额</view>
+              <view class="weui-form-preview__value_in-hd">{{total_incl_tax}}</view>
             </view>
           </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">设备号</view>
-            <view class="weui-form-preview__value">
-             {{asset_location.code}}
+          <view class="weui-form-preview__bd">
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">使用时长</view>
+              <view class="weui-form-preview__value">{{unit_duration_min}} min</view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">地点</view>
+              <view class="weui-form-preview__value">
+              {{asset_location.line2}}
+              </view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">设备号</view>
+              <view class="weui-form-preview__value">
+              {{asset_location.code}}
+              </view>
             </view>
           </view>
         </view>
-      </view>
-      <view class="weui-msg">
+        <view class="weui-msg">
           <view class="weui-msg__opr-area">
               <view class="weui-btn-area">
-                  <button class="weui-btn" type="primary" @tap="checkout">支付</button>
+                <button class="weui-btn" type="primary" @tap="checkout">支付</button>
               </view>
           </view>
         </view>
+
       </view>
     </view>
   </view>
@@ -78,24 +79,72 @@
         .then(({data}) => {
           console.info('response', data)
           if (data.occupied) {
-            let userId = this.getTokenPayload().user_id
-            if (userId === data.occupied_by) {
-              wepy.redirectTo({
-                url: 'pages/power/countdown'
+            let userId = this.$getTokenPayload().user_id
+            // data.order.owner => "http://127.0.0.1:8090/api/v1/oscar/users/2/"
+            let ownerId = data.order.owner.split('/')
+            ownerId = parseInt( ownerId[ownerId.length-2] )
+            if (userId === ownerId) {
+              if (data.order.status === 'Pending') {
+                this.order = data.order
+                this.displayPaymentCountDown()
+                let basketId = data.order.basket.split('/')
+                basketId = parseInt( basketId[basketId.length-2] )
+                this.$get({
+                  url: `/oscar/asset/basket/${basketId}`
+                }).then(({data}) => {
+                  this.basket_id = data.id
+                  this.total_incl_tax = data.total_incl_tax
+                  this.asset_location = data.lines[0].asset_location
+                  this.$apply()
+                })
+              } else {
+                wepy.redirectTo({
+                  url: '/pages/power/countdown'
+                })
+              }
+            } else {
+              wepy.showModal({
+                title: '已被占用',
+                content: '该设备已被占用，请稍后重试',
+                showCancel: false
+              }).then((res) => {
+                wepy.switchTab({
+                  url: '/pages/index'
+                })
               })
             }
+            return Promise.reject(Error('The device is occupied'))
           }
-          console.info('sending another request to reserve this assetlocation')
-          let previewParams = Object.assign({unit_duration_min: 45}, params)
+          return params
+        }).then((params) => {
+          let previewParams = Object.assign({unit_duration_min: this.unit_duration_min}, params)
           return this.$post({
             url: '/oscar/basket/preview',
             data: previewParams
+          }).then(({data}) => {
+            this.basket_id = data.id
+            this.total_incl_tax = data.total_incl_tax
+            this.asset_location = data.lines[0].asset_location
+          }).catch(({statusCode, data}) => {
+            let content = 'Unknonw error'
+            switch (statusCode) {
+              case 400:
+                content = JSON.stringify(data)
+                break
+              default:
+                content = data.detail
+            }
+            wepy.showModal({
+              title: 'Error',
+              content: content,
+              showCancel: false
+            }).then((res) => {
+              wepy.switchTab({
+                url: '/pages/index'
+              })
+            })
+            console.error(status, data)
           })
-        }).then(({data}) => {
-          this.basket_id = data.id
-          this.total_incl_tax = data.total_incl_tax
-          this.asset_location = data.lines[0].asset_location
-          console.info('preview is done')
         }).finally((res) => {
           wepy.hideLoading()
           this.loading = false
@@ -112,16 +161,11 @@
     }
     methods = {
       checkout () {
-        // this.$post({
-        //   url: '/oscar/assetlocation/status',
-        //   data: params
-        // })
         this.placeOrder()
-          .then(({data}) => {
+          .then((order) => {
             // launch_payment_request
-            console.info('order launch payment url', data, `${config.domain}${data.payment_url}`)
             return this.$post({
-              url: data.payment_url,
+              url: order.payment_url,
               baseUrl: config.domain
             })
           })
@@ -153,10 +197,15 @@
       return this.$post({
         url: '/oscar/asset/checkout',
         data: params
-      }).then((data) => {
+      }).then(({data}) => {
         this.order = data
+        this.displayPaymentCountDown()
         return data
       })
+    }
+
+    displayPaymentCountDown() {
+      console.info('displayPaymentCountDown')
     }
   }
 

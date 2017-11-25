@@ -30,6 +30,12 @@
               {{asset_location.code}}
               </view>
             </view>
+            <view class="weui-form-preview__item" wx:if="{{order}}">
+              <view class="weui-form-preview__label">订单号</view>
+              <view class="weui-form-preview__value">
+              {{order.number}}
+              </view>
+            </view>
           </view>
         </view>
         <view class="weui-msg">
@@ -39,7 +45,11 @@
               </view>
           </view>
         </view>
-
+        <view class="weui-loadmore weui-loadmore_line" wx:if="{{order}}">
+          <view class="weui-loadmore__tips weui-loadmore__tips_in-line" style="background-color:transparent;">
+            请在 {{timeoutRemainSec}} sec 内完成支付
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -57,7 +67,7 @@
   export default class Order extends wepy.page {
     mixins = [http, user]
     config = {
-      navigationBarTitleText: '确认支付'
+      navigationBarTitleText: '支付'
     }
     data = {
       loading: true,
@@ -65,7 +75,8 @@
       unit_duration_min: 45,
       asset_location: {},
       basket_id: -1,
-      order: null
+      order: null,
+      timeoutRemainSec: -1
     }
     computed = {}
     onLoad(params) {
@@ -82,24 +93,24 @@
             let userId = this.$getTokenPayload().user_id
             // data.order.owner => "http://127.0.0.1:8090/api/v1/oscar/users/2/"
             let ownerId = data.order.owner.split('/')
-            ownerId = parseInt( ownerId[ownerId.length-2] )
+            ownerId = parseInt(ownerId[ownerId.length - 2])
             if (userId === ownerId) {
-              if (data.order.status === 'Pending') {
+              let orderId = data.order.url.split('/')
+              orderId = parseInt(orderId[orderId.length - 2])
+              if (data.order.status === 'Timeout') {
+                // request a new basket and generate a new order
+                return params
+              } else if (data.order.status === 'Pending') {
                 this.order = data.order
-                this.displayPaymentCountDown()
+                this.order.id = orderId
                 let basketId = data.order.basket.split('/')
-                basketId = parseInt( basketId[basketId.length-2] )
-                this.$get({
-                  url: `/oscar/asset/basket/${basketId}`
-                }).then(({data}) => {
-                  this.basket_id = data.id
-                  this.total_incl_tax = data.total_incl_tax
-                  this.asset_location = data.lines[0].asset_location
-                  this.$apply()
-                })
+                this.basket_id = parseInt(basketId[basketId.length - 2])
+                this.total_incl_tax = data.order.total_incl_tax
+                this.asset_location = data.order.lines[0].asset_location
+                this.displayPaymentCountDown()
               } else {
                 wepy.redirectTo({
-                  url: '/pages/power/countdown'
+                  url: `/pages/power/countdown?order_id=${orderId}`
                 })
               }
             } else {
@@ -191,7 +202,7 @@
       let params = {
         basket: `${config.baseUrl}/oscar/baskets/${this.basket_id}/`,
         total: this.total_incl_tax,
-        shipping_method_code: 'commence-down'
+        shipping_method_code: 'count-down'
       }
 
       return this.$post({
@@ -205,7 +216,29 @@
     }
 
     displayPaymentCountDown() {
-      console.info('displayPaymentCountDown')
+      if (!this.order) {
+        return
+      }
+      let datePlacedTs = new Date(this.order.date_placed).getTime()
+      let timeoutSecsTs = this.order.countdown_secs * 1000
+      let nowTs = new Date().getTime()
+      if (datePlacedTs + timeoutSecsTs < nowTs) {
+        wepy.showModal({
+          title: '注意',
+          content: '该订单已失效, 请重新下单',
+          showCancel: false
+        }).then((res) => {
+          wepy.redirectTo({
+            url: `/pages/power/order?sku_code=${this.order.lines[0].asset_location.code}`
+          })
+        })
+      } else {
+        this.timeoutRemainSec = Math.floor((timeoutSecsTs - nowTs + datePlacedTs) / 1000)
+        this.$apply()
+        setTimeout(() => {
+          this.displayPaymentCountDown()
+        }, 2000)
+      }
     }
   }
 

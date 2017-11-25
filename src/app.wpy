@@ -96,6 +96,12 @@ export default class extends wepy.app {
     return new UserUtil().$login()
             .then(() => {
               this.globalData.loginInited = true
+            }).catch(() => {
+              wepy.showModal({
+                title: '错误',
+                content: '登录失败, 请稍后重试',
+                showCancel: false
+              })
             })
   }
 

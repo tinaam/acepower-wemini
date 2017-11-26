@@ -97,10 +97,10 @@
             if (userId === ownerId) {
               let orderId = data.order.url.split('/')
               orderId = parseInt(orderId[orderId.length - 2])
-              if (data.order.status === 'Timeout') {
+              if (data.order.status === 'timeout') {
                 // request a new basket and generate a new order
                 return params
-              } else if (data.order.status === 'Pending') {
+              } else if (data.order.status === 'pending') {
                 this.order = data.order
                 this.order.id = orderId
                 let basketId = data.order.basket.split('/')
@@ -177,20 +177,36 @@
             // launch_payment_request
             return this.$post({
               url: order.payment_url,
+              params: {
+                'source_type': 'test'
+              },
               baseUrl: config.domain
             })
           })
           .catch(() => {
             // launch_payment_failure
+            wepy.showModal({
+              title: '错误',
+              content: '发起支付出错, 请重试',
+              showCancel: false
+            })
           })
           .finally(() => {
             wepy.hideLoading()
             this.loading = false
             this.$apply()
-          })
-          .then(({data}) => {
+          }).then(({data}) => {
             // launch wx payment dialog
-            console.info('launch wx payment dialog')
+            return wepy.showModal({
+              title: '模拟支付',
+              content: `${this.order.currency} ${this.total_incl_tax}`,
+              showCancel: false
+            })
+          }).then((res) => {
+            // callback between mini and wx server
+            wepy.redirectTo({
+              url: `/pages/power/countdown?order_id=${this.order.id}`
+            })
           })
       }
     }

@@ -10,7 +10,7 @@
           <view class="weui-form-preview__hd">
             <view class="weui-form-preview__item">
               <view class="weui-form-preview__label">付款金额</view>
-              <view class="weui-form-preview__value_in-hd">{{total_incl_tax}}</view>
+              <view class="weui-form-preview__value_in-hd">¥{{total_incl_tax}}</view>
             </view>
           </view>
           <view class="weui-form-preview__bd">
@@ -76,7 +76,8 @@
       asset_location: {},
       basket_id: -1,
       order: null,
-      timeoutRemainSec: -1
+      timeoutRemainSec: -1,
+      timeoutRef: null
     }
     computed = {}
     onLoad(params) {
@@ -95,14 +96,12 @@
             let ownerId = data.order.owner.split('/')
             ownerId = parseInt(ownerId[ownerId.length - 2])
             if (userId === ownerId) {
-              let orderId = data.order.url.split('/')
-              orderId = parseInt(orderId[orderId.length - 2])
+              this.resolveOrderId(data.order)
               if (data.order.status === 'timeout') {
                 // request a new basket and generate a new order
                 return params
               } else if (data.order.status === 'pending') {
                 this.order = data.order
-                this.order.id = orderId
                 let basketId = data.order.basket.split('/')
                 this.basket_id = parseInt(basketId[basketId.length - 2])
                 this.total_incl_tax = data.order.total_incl_tax
@@ -110,7 +109,7 @@
                 this.displayPaymentCountDown()
               } else {
                 wepy.redirectTo({
-                  url: `/pages/power/countdown?order_id=${orderId}`
+                  url: `/pages/power/countdown?order_id=${data.order.id}`
                 })
               }
             } else {
@@ -170,6 +169,13 @@
         })
       }
     }
+    onUnload() {
+      if (this.timeoutRef) {
+        clearTimeout(this.timeoutRef)
+        this.timeoutRef = null
+        this.$apply()
+      }
+    }
     methods = {
       checkout () {
         this.placeOrder()
@@ -203,6 +209,10 @@
               showCancel: false
             })
           }).then((res) => {
+            this.loading = true
+            this.$apply()
+            return this.pollShippingInfo()
+          }).then((res) => {
             // callback between mini and wx server
             wepy.redirectTo({
               url: `/pages/power/countdown?order_id=${this.order.id}`
@@ -226,6 +236,7 @@
         data: params
       }).then(({data}) => {
         this.order = data
+        this.resolveOrderId(data)
         this.displayPaymentCountDown()
         return data
       })
@@ -250,11 +261,37 @@
         })
       } else {
         this.timeoutRemainSec = Math.floor((timeoutSecsTs - nowTs + datePlacedTs) / 1000)
-        this.$apply()
-        setTimeout(() => {
+        this.timeoutRef = setTimeout(() => {
           this.displayPaymentCountDown()
         }, 2000)
+        this.$apply()
       }
+    }
+
+    pollShippingInfo() {
+      console.info('pollShippingInfo')
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          this.$get({
+            url: `/oscar/asset/order/${this.order.id}/shipping-info`
+          }).then(({data}) => {
+            if (!data.shipped_time) {
+              resolve(this.pollShippingInfo())
+            } else {
+              resolve(data)
+            }
+          }).catch(() => {
+            resolve(this.pollShippingInfo())
+          })
+        }, 500)
+      })
+    }
+
+    resolveOrderId(order) {
+      let orderId = order.url.split('/')
+      orderId = parseInt(orderId[orderId.length - 2])
+      order.id = orderId
+      return orderId
     }
   }
 

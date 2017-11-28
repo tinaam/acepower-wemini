@@ -114,7 +114,7 @@ class userMixin extends wepy.mixin {
   $requestAuthModal() {
     return wepy.showModal({
       title: '授权提示',
-      content: 'BookMall希望获得以下权限：\n · 获取您的公开信息（昵称、头像等）',
+      content: 'Tinaam 希望获得以下权限：\n · 获取您的公开信息（昵称、头像等）',
       confirmText: '去授权',
       cancelText: '先不授权'
     }).then((res) => {
@@ -129,7 +129,6 @@ class userMixin extends wepy.mixin {
   $openSetting() {
     return wepy.openSetting()
       .then((authSetting) => {
-        console.log('wx.openSetting.success', authSetting)
         if (authSetting['scope.userInfo']) {
           // redo $prepareUserInfo
           this.$prepareUserInfo()

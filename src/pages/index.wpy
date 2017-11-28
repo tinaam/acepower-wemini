@@ -11,7 +11,7 @@
       </view>
       <view class="weui-msg__opr-area">
         <view class="weui-btn-area">
-          <button class="weui-btn" type="primary">扫描使用</button>
+          <button class="weui-btn" type="primary" @tap="scanQRCode">扫描使用</button>
         </view>
       </view>
       <view class="weui-msg__extra-area">
@@ -28,73 +28,43 @@
 
 <script>
   import wepy from 'wepy'
-  import base from '../mixins/base'
   import http from '../mixins/http'
-  import Swiper from '../components/swiper'
-  import SearchBar from '../components/searchbar'
+  import user from '../mixins/user'
 
   export default class HomeIndex extends wepy.page {
-    mixins = [base, http]
+    mixins = [http, user]
     config = {
       navigationBarTitleText: '首页',
       navigationBarTextStyle: 'white',
       navigationBarBackgroundColor: '#049BFF'
     }
-    data = {
-      searchText: 'book',
-      swipers: [
-        // 占位图，防止请求错误无图显示
-        {
-          image: '/images/swiper.png',
-          url: '/pages/main/search'
-        }
-      ],
-      categorys: [],
-
-      noMoreList: false,
-      loading: false,
-      list: [],
-      page: 0,
-      size: 5
+    data = {}
+    methods = {
+      scanQRCode () {
+        wepy.scanCode({
+          onlyFromCamera: true
+        }).then(({result, path}) => {
+          let url = result
+          if (path) {
+            url = path
+          }
+          wepy.redirectTo({
+            url: url
+          })
+        }).catch(() => {
+          wepy.showModal({
+            title: '异常',
+            content: '调用扫描二维码异常',
+            showCancel: false
+          })
+        })
+      }
     }
-
-    onReady() {
-      this.initPageData()
-    }
-
-    onPullDownRefresh() {
-      this.initPageData()
-    }
-
-    onReachBottom() {
-      setTimeout(() => {
-        this.updateBookList(this.page)
-        this.$apply()
-      }, 200)
-    }
-
-    // 初始化页面数据
-    initPageData() {
-      // 初始化参数
-      this.page = 0
-      // 处理轮播图
-      this.swipers.push({
-        image: '/images/swiper.png'
-      })
-
-      // this.$get({url: 'http://127.0.0.1:8090'})
-      //   .then((res) => {
-      //     console.info('index page', res)
-      //   }).finally(() => {
-      //     console.info('index page finally  ')
-      //   })
-    }
-
-    methods = {}
-
-    components = {
-      SearchBar,
-      Swiper
+    onLoad(params) {
+      this.$ensureLogin()
+        .then(() => {
+          return this.$prepareUserInfo()
+        })
     }
   }
 

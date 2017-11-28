@@ -5,45 +5,52 @@
       <view class="page__title">订单详情</view>
     </view>
     <view class="page__bd">
-      <view class="weui-form-preview">
-        <view class="weui-form-preview__hd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">付款金额</view>
-            <view class="weui-form-preview__value_in-hd">¥6.00</view>
+      <view wx:if="{{order}}">
+        <view class="weui-form-preview">
+          <view class="weui-form-preview__hd">
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">付款金额</view>
+              <view class="weui-form-preview__value_in-hd">¥{{order.total_incl_tax}}</view>
+            </view>
+          </view>
+          <view class="weui-form-preview__bd">
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">使用时长</view>
+              <view class="weui-form-preview__value">{{unit_duration_min}} min</view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">地点</view>
+              <view class="weui-form-preview__value">
+              {{asset_location.line2}}
+              </view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">设备号</view>
+              <view class="weui-form-preview__value">
+              {{asset_location.code}}
+              </view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">订单号</view>
+              <view class="weui-form-preview__value">
+              {{order.number}}
+              </view>
+            </view>
           </view>
         </view>
-        <view class="weui-form-preview__bd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">订单号</view>
-            <view class="weui-form-preview__value">
-              aaa-bbb-ccc
-            </view>
-          </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">时间</view>
-            <view class="weui-form-preview__value">2017-10-01 00:30</view>
-          </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">地点</view>
-            <view class="weui-form-preview__value">
-             广州四季酒店 
-            </view>
-          </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">设备号</view>
-            <view class="weui-form-preview__value">
-             xxx-yyy-zzz
-            </view>
-          </view>
-        </view>
-      </view>
-      <view class="weui-msg">
+        <view class="weui-msg">
           <view class="weui-msg__opr-area">
               <view class="weui-btn-area">
-                  <button class="weui-btn" type="primary">再次使用</button>
+                <button class="weui-btn" type="primary" @tap="scanQRCode">再次使用</button>
               </view>
           </view>
         </view>
+        <view class="weui-loadmore weui-loadmore_line">
+          <view class="weui-loadmore__tips weui-loadmore__tips_in-line" style="background-color:transparent;">
+            谢谢使用本产品
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -53,10 +60,100 @@
 
 <script>
   import wepy from 'wepy'
+  import http from '../../mixins/http'
+  import user from '../../mixins/user'
 
   export default class eview extends wepy.page {
+    mixins = [http, user]
     config = {
       navigationBarTitleText: '订单详情'
+    }
+    methods = {
+      scanQRCode () {
+        wepy.scanCode({
+          onlyFromCamera: true
+        }).then(({result, path}) => {
+          let url = result
+          if (path) {
+            url = path
+          }
+          wepy.redirectTo({
+            url: url
+          })
+        }).catch(() => {
+          wepy.showModal({
+            title: '异常',
+            content: '调用扫描二维码异常',
+            showCancel: false
+          })
+        })
+      }
+    }
+    data = {
+      loading: true,
+      order: null
+    }
+    computed = {
+      asset_location () {
+        if (!this.order) {
+          return {}
+        } else {
+          return this.order.lines[0].asset_location
+        }
+      },
+      unit_duration_min () {
+        if (!this.order) {
+          return 0
+        } else {
+          let firstLine = this.order.lines[0]
+          let attrs = firstLine.attributes.filter((e) => {
+            return e.code === 'unit_duration_min'
+          })
+          return attrs.length ? parseInt(attrs[0].value) : 0
+        }
+      }
+    }
+    onLoad(params) {
+      let orderId = params.order_id
+      if (!orderId) {
+        wepy.showModal({
+          title: '异常',
+          content: '页面参数异常',
+          showCancel: false
+        }).then((res) => {
+          wepy.navigateBack()
+        })
+        return
+      }
+      this.$ensureLogin()
+        .then(() => {
+          return this.$get({
+            url: `/oscar/asset/order/${params.order_id}`
+          })
+        })
+        .then(({data}) => {
+          this.order = data
+          this.order.id = params.order_id
+        }).catch(() => {
+          wepy.showModal({
+            title: '错误',
+            content: '获取订单信息错误, 请重试',
+            showCancel: false
+          }).then((res) => {
+            wepy.navigateBack()
+          })
+        }).finally(() => {
+          wepy.hideLoading()
+          this.loading = false
+          this.$apply()
+        })
+    }
+    onReady() {
+      if (this.loading) {
+        wepy.showLoading({
+          title: 'Loading...'
+        })
+      }
     }
   }
 

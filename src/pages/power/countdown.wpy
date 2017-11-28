@@ -4,46 +4,48 @@
       <view class="page__title">
         倒计时
         <view class="circle-box">
-      <canvas class="circle" style="width:200px; height:200px; position: absolute;" canvas-id="canvasArc"
-      binderror="canvasIdErrorCallback">
-      </canvas>
-      <canvas class="circle" style="z-index: -5; width:200px; height:200px;" canvas-id="canvasCircle"
-      binderror="canvasIdErrorCallback">
-      </canvas>
-      <view class="draw_btn" @tap="drawCircle">{{remainMin}}<text class="weui-media-box__desc" style="display: inline;">min</text>
-      </view>
-    </view> 
+          <canvas class="circle" style="width:200px; height:200px; position: absolute;" canvas-id="canvasArc"
+          binderror="canvasIdErrorCallback">
+          </canvas>
+          <canvas class="circle" style="z-index: -5; width:200px; height:200px;" canvas-id="canvasCircle"
+          binderror="canvasIdErrorCallback">
+          </canvas>
+          <view class="draw_btn">{{remainMinStr}}<text class="weui-media-box__desc" style="display: inline;">min</text>
+          </view>
+        </view>
       </view>
     </view>
     <view class="page__bd">
-      <view class="weui-form-preview">
-        <view class="weui-form-preview__hd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">付款金额</view>
-            <view class="weui-form-preview__value_in-hd">¥6.00</view>
-          </view>
-        </view>
-        <view class="weui-form-preview__bd">
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">订单号</view>
-            <view class="weui-form-preview__value">
-              aaa-bbb-ccc
+      <view wx:if="{{order}}">
+        <view class="weui-form-preview">
+          <view class="weui-form-preview__hd">
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">付款金额</view>
+              <view class="weui-form-preview__value_in-hd">¥{{order.total_incl_tax}}</view>
             </view>
           </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">时间</view>
-            <view class="weui-form-preview__value">2017-10-01 00:30</view>
-          </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">地点</view>
-            <view class="weui-form-preview__value">
-             广州四季酒店 
+          <view class="weui-form-preview__bd">
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">使用时长</view>
+              <view class="weui-form-preview__value">{{unit_duration_min}} min</view>
             </view>
-          </view>
-          <view class="weui-form-preview__item">
-            <view class="weui-form-preview__label">设备号</view>
-            <view class="weui-form-preview__value">
-             xxx-yyy-zzz
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">地点</view>
+              <view class="weui-form-preview__value">
+              {{asset_location.line2}}
+              </view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">设备号</view>
+              <view class="weui-form-preview__value">
+              {{asset_location.code}}
+              </view>
+            </view>
+            <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">订单号</view>
+              <view class="weui-form-preview__value">
+              {{order.number}}
+              </view>
             </view>
           </view>
         </view>
@@ -73,48 +75,106 @@
 
 <script>
   import wepy from 'wepy'
+  import http from '../../mixins/http'
+  import user from '../../mixins/user'
 
   export default class Countdown extends wepy.page {
+    mixins = [http, user]
     config = {
       navigationBarTitleText: '使用中'
     }
     data = {
       arcCtx: wepy.createCanvasContext('canvasArc'),
-      remainSec: 45 * 60,
-      remainSecCount: 0,
+      remainTsCount: 0,
       checkIntervalSec: 60,
       centerX: 100,
       centerY: 100,
       radius: 96,
-      startAngle: 0 - Math.PI / 2
+      startAngle: 0 - Math.PI / 2,
+      loading: true,
+      order: null
     }
     computed = {
-      remainMin () {
-        return this.remainSecCount / 60
+      remainMinStr () {
+        if (!this.order) {
+          return '00'
+        }
+        let result = Math.round(this.remainTsCount / 60 / 1000)
+        if (result < 10) {
+          result = '0' + result
+        }
+        return '' + result
+      },
+      asset_location () {
+        if (!this.order) {
+          return {}
+        } else {
+          return this.order.lines[0].asset_location
+        }
+      },
+      unit_duration_min () {
+        if (!this.order) {
+          return 0
+        } else {
+          let firstLine = this.order.lines[0]
+          let attrs = firstLine.attributes.filter((e) => {
+            return e.code === 'unit_duration_min'
+          })
+          return attrs.length ? parseInt(attrs[0].value) : 0
+        }
       }
     }
     methods = {
-      drawCircle () {
-        let endAngle = 0
-        let totalRemain = this.remainSec
-        let doDrawCircle = () => {
-          endAngle = (1 - this.remainSecCount / totalRemain) * 2 * Math.PI + this.startAngle
-          this.drawArc(this.startAngle, endAngle)
-          if (this.remainSecCount <= 0) {
-            return
-          }
-          this.remainSecCount -= this.checkIntervalSec
-          this.$apply()
-          setTimeout(doDrawCircle, this.checkIntervalSec * 1) // TODO
-        }
-        doDrawCircle()
-      },
       canvasIdErrorCallback (e) {
         console.error(e.detail.errMsg)
       }
     }
-
+    onLoad(params) {
+      let orderId = params.order_id
+      if (!orderId) {
+        wepy.showModal({
+          title: '异常',
+          content: '页面参数异常',
+          showCancel: false
+        }).then((res) => {
+          wepy.switchTab({
+            url: '/pages/index'
+          })
+        })
+        return
+      }
+      this.$ensureLogin()
+        .then(() => {
+          return this.$get({
+            url: `/oscar/asset/order/${params.order_id}`
+          })
+        })
+        .then(({data}) => {
+          this.order = data
+          this.order.id = params.order_id
+        }).catch(() => {
+          wepy.showModal({
+            title: '错误',
+            content: '获取订单信息错误, 请重试',
+            showCancel: false
+          }).then((res) => {
+            wepy.redirectTo({
+              url: `/pages/power/countdown?order_id=${params.order_id}`
+            })
+          })
+        }).finally(() => {
+          wepy.hideLoading()
+          this.loading = false
+          this.drawCircle()
+          this.$apply()
+        })
+    }
     onReady() {
+      if (this.loading) {
+        wepy.showLoading({
+          title: 'Loading...'
+        })
+      }
       let circleCtx = wepy.createCanvasContext('canvasCircle')
       circleCtx.setLineWidth(5)
       circleCtx.setStrokeStyle('#049BFF')
@@ -123,10 +183,57 @@
       circleCtx.arc(this.centerX, this.centerY, this.radius, 0, 2 * Math.PI, false)
       circleCtx.stroke()
       circleCtx.draw()
-      // for a better display
-      this.remainSecCount = this.remainSec
     }
-
+    onUnload() {
+      if (this.timeoutRef) {
+        clearTimeout(this.timeoutRef)
+        this.timeoutRef = null
+        this.$apply()
+      }
+    }
+    drawCircle () {
+      if (!this.order) {
+        // avoid polling the server in vain
+        return
+      }
+      this.$get({
+        url: `/oscar/asset/order/${this.order.id}/shipping-info`
+      }).then(({data}) => {
+        if (data.delivered) {
+          this.remainTsCount = 0
+          this.displayThankYouMessage()
+          return
+        }
+        let shippedTs = new Date(data.shipped_time).getTime()
+        if (isNaN(shippedTs)) {
+          // may not be ready to get shipping info
+          this.drawCircle()
+          return
+        }
+        let totalTs = this.unit_duration_min * 60 * 1000
+        let nowTs = new Date().getTime()
+        this.remainTsCount = totalTs - (nowTs - shippedTs)
+        if (this.remainTsCount < 0) {
+          this.remainTsCount = 0
+        }
+        let endAngle = (1 - this.remainTsCount / totalTs) * 2 * Math.PI + this.startAngle
+        this.drawArc(this.startAngle, endAngle)
+        if (this.remainTsCount <= 0) {
+          this.displayThankYouMessage()
+          return
+        }
+        // trigger another drawCircle request
+        this.timeoutRef = setTimeout(() => {
+          this.drawCircle()
+        }, this.checkIntervalSec * 1000) // we redraw this clock every minute
+      }).catch(() => {
+        this.timeoutRef = setTimeout(() => {
+          this.drawCircle()
+        }, this.checkIntervalSec * 1000) // we redraw this clock every minute
+      }).finally(() => {
+        this.$apply()
+      })
+    }
     drawArc(s, e) {
       this.arcCtx.setFillStyle('white')
       this.arcCtx.clearRect(0, 0, 200, 200)
@@ -139,6 +246,11 @@
       this.arcCtx.arc(this.centerX, this.centerY, this.radius, s, e, false)
       this.arcCtx.stroke()
       this.arcCtx.draw()
+    }
+    displayThankYouMessage() {
+      wepy.redirectTo({
+        url: `/pages/power/review?order_id=${this.order.id}`
+      })
     }
   }
 

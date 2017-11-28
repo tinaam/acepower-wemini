@@ -83,6 +83,9 @@
     onLoad(params) {
       this.$ensureLogin()
         .then(() => {
+          return this.$prepareUserInfo()
+        })
+        .then(() => {
           return this.$get({
             url: '/oscar/assetlocation/status',
             data: params

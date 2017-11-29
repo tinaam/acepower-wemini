@@ -6,8 +6,7 @@
           <view class="weui-cell__bd userinfo clearfix">
             <image class="userinfo-avatar" src="{{ userInfo.avatarUrl }}" background-size="cover" />
             <view class="userinfo-info">
-              <view class="userinfo-nickname">{{ nicname }}</view>
-              <view class="userinfo-status">{{identity.type}}</view>
+              <view class="userinfo-status">{{ userInfo.nickname }}</view>
             </view>
           </view>
         </view>
@@ -17,15 +16,11 @@
       <view class="weui-panel__hd">使用记录</view>
       <view class="weui-panel__bd">
         <view class="weui-cells weui-cells_after-title">
-          <navigator url="/pages/user/history" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
-            <view class="weui-cell__bd">正在使用中</view>
-            <view class="weui-cell__ft weui-cell__ft_in-access">
-              <view class="weui-badge">2</view>
-            </view>
-          </navigator>
-          <navigator url="/pages/user/history" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <navigator url="/pages/user/history?status=complete" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
             <view class="weui-cell__bd">过往记录</view>
-            <view class="weui-cell__ft weui-cell__ft_in-access"></view>
+            <view class="weui-cell__ft weui-cell__ft_in-access" wx:if="{{used}}">
+              {{used.count}}
+            </view>
           </navigator>
         </view>
       </view>
@@ -43,7 +38,6 @@
 
 <script>
   import wepy from 'wepy'
-  // import { service } from '../config.js'
   import http from '../../mixins/http'
   import base from '../../mixins/base'
   import user from '../../mixins/user'
@@ -57,63 +51,51 @@
     data = {
       userInfo: {
         nickname: '加载中...',
-        // 头像占位图
-        avatarUrl: '../../images/icon/icon-avatar@2x.png',
-
-        packages: {
-          times: 0,
-          status: '借阅状态'
-        },
-        identity: {
-          type: '订阅状态',
-          collection: 0
-        }
-      }
-    }
-
-    computed = {
-      packages() {
-        return this.getObject(this.getObject(this.userInfo).packages)
+        avatarUrl: '../../images/icon/icon-avatar@2x.png'
       },
-      identity() {
-        return this.getObject(this.getObject(this.userInfo).identity)
-      },
-      nickname() {
-        const info = this.getObject(this.userInfo)
-        // 名称或头像不为空的，才认为是授权用户
-        return (info.nickname || info.avatarUrl) ? info.nickname : '未授权用户'
-      }
+      used: null,
+      loading: true
     }
-
-    onShow() {
-      // 初始化页面数据
-      this.$getUserInfo()
-        .then((info) => {
+    computed = {}
+    onLoad() {
+      return this.$ensureLogin()
+        .then(() => {
+          return this.$prepareUserInfo()
+        }).then((info) => {
           const uinfo = this.getObject(info)
           const userInfo = this.getObject(this.userInfo)
           this.userInfo = Object.assign({}, userInfo, uinfo)
           this.initPageData()
         }).finally(() => {
+          this.loading = false
+          wepy.hideLoading()
           this.$apply()
         })
     }
-
-    onPullDownRefresh() {
-      this.initPageData()
+    onReady() {
+      if (this.loading) {
+        wepy.showLoading({
+          title: 'Loading...'
+        })
+      }
     }
-
-    // 初始化页面数据
     initPageData() {
-      // 根据业务接口处理:获取最新个人信息并更新
-      // this.$get({url: service.user}, {
-      //   success: ({code, data}) => {},
-      //   fail: ({code, data}) => {}
-      // })
+      this.$get({
+        url: '/oscar/history/orders/',
+        data: {
+          status: 'complete',
+          fields: 'id'
+        }
+      }).then(({data}) => {
+        if (data.count) {
+          this.used = {
+            count: data.count
+          }
+        }
+      }).finally(() => {
+        this.$apply()
+      })
     }
-
-    methods = {}
-
-    components = {}
   }
 
 </script>

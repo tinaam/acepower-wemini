@@ -146,7 +146,7 @@
       this.$ensureLogin()
         .then(() => {
           return this.$get({
-            url: `/oscar/asset/order/${params.order_id}`
+            url: `/oscar/asset/orders/${params.order_id}`
           })
         })
         .then(({data}) => {
@@ -197,7 +197,7 @@
         return
       }
       this.$get({
-        url: `/oscar/asset/order/${this.order.id}/shipping-info`
+        url: `/oscar/asset/orders/${this.order.id}/shipping-info`
       }).then(({data}) => {
         if (data.delivered) {
           this.remainTsCount = 0

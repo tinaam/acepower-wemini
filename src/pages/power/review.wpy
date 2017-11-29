@@ -15,6 +15,10 @@
           </view>
           <view class="weui-form-preview__bd">
             <view class="weui-form-preview__item">
+              <view class="weui-form-preview__label">使用时间</view>
+              <view class="weui-form-preview__value">{{date_placed_str}}</view>
+            </view>
+            <view class="weui-form-preview__item">
               <view class="weui-form-preview__label">使用时长</view>
               <view class="weui-form-preview__value">{{unit_duration_min}} min</view>
             </view>
@@ -94,6 +98,13 @@
       order: null
     }
     computed = {
+      date_placed_str() {
+        if (!this.order) {
+          return ''
+        } else {
+          return new Date(this.order.date_placed).toLocaleString('zh-hans', {hour12: false})
+        }
+      },
       asset_location () {
         if (!this.order) {
           return {}
@@ -128,7 +139,7 @@
       this.$ensureLogin()
         .then(() => {
           return this.$get({
-            url: `/oscar/asset/order/${params.order_id}`
+            url: `/oscar/asset/orders/${params.order_id}`
           })
         })
         .then(({data}) => {

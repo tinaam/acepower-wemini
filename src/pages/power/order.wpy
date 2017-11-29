@@ -276,7 +276,7 @@
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           this.$get({
-            url: `/oscar/asset/order/${this.order.id}/shipping-info`
+            url: `/oscar/asset/orders/${this.order.id}/shipping-info`
           }).then(({data}) => {
             if (!data.shipped_time) {
               resolve(this.pollShippingInfo())

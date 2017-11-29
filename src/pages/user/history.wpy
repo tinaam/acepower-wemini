@@ -23,22 +23,27 @@
         <view class="weui-panel__bd">
           <view class="weui-media-box weui-media-box_small-appmsg">
             <view class="weui-cells weui-cells_in-small-appmsg">
-              <navigator url="/pages/power/review?id=1" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
-                <view class="weui-media-box__bd weui-media-box__bd_in-appmsg">
-                  <view class="weui-media-box__title">四季酒店</view>
-                  <view class="weui-media-box__desc">2017-10-01 00:30</view>
-                </view>
-                <view class="weui-cell__ft weui-cell__ft_in-access">¥6.00</view>
-              </navigator>
-              <navigator url="/pages/power/review?id=2" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
-                <view class="weui-media-box__bd weui-media-box__bd_in-appmsg">
-                  <view class="weui-media-box__title">万豪酒店</view>
-                  <view class="weui-media-box__desc">2017-10-02 00:30</view>
-                </view>
-                <view class="weui-cell__ft weui-cell__ft_in-access">¥6.00</view>
-              </navigator>
+              <repeat for="{{items}}" key="id" index="index" item="item">
+                <navigator url="/pages/power/review?order_id={{item.id}}" 
+                  class="weui-cell weui-cell_access" 
+                  hover-class="weui-cell_active">
+                  <view class="weui-media-box__bd weui-media-box__bd_in-appmsg">
+                    <view class="weui-media-box__title">{{item.asset_location.line2}}</view>
+                    <view class="weui-media-box__desc">{{item.datePlacedStr}}</view>
+                  </view>
+                  <view class="weui-cell__ft weui-cell__ft_in-access">¥{{item.total_incl_tax}}</view>
+                </navigator>
+              </repeat>
             </view>
           </view>
+        </view>
+      </view>
+      <view class="weui-loadmore" wx:if="{{loading}}">
+          <view class="weui-loading"></view>
+          <view class="weui-loadmore__tips">正在加载</view>
+      </view>
+      <view class="weui-loadmore weui-loadmore_line weui-loadmore_dot" wx:if="{{isNoMore}}">
+        <view class="weui-loadmore__tips weui-loadmore__tips_in-line weui-loadmore__tips_in-dot" style="background-color:transparent;">
         </view>
       </view>
     </view>
@@ -47,13 +52,33 @@
 
 <script>
   import wepy from 'wepy'
+  import http from '../../mixins/http'
+  import base from '../../mixins/base'
+  import user from '../../mixins/user'
+
   export default class History extends wepy.page {
+    mixins = [base, http, user]
     config = {
       navigationBarTitleText: '使用记录'
     }
     data = {
       inputShowed: false,
-      inputVal: ''
+      inputVal: '',
+      orderStatus: 'complete',
+      loading: true,
+      items: [],
+      page: 1,
+      pageSize: 10,
+      totalCount: 0,
+      timeoutRef: null
+    }
+    computed = {
+      isNoMore() {
+        if (this.loading) {
+          return false
+        }
+        return this.page * this.pageSize >= this.totalCount
+      }
     }
     methods = {
       showInput() {
@@ -67,15 +92,71 @@
         this.inputVal = ''
       },
       inputTyping(e) {
-        this.inputVal = e.detail.value
+        clearTimeout(this.timeoutRef)
+        this.timeoutRef = setTimeout(() => {
+          this.inputVal = e.detail.value
+          this.page = 1
+          let params = {
+            q: this.inputVal,
+            page: this.page
+          }
+          this.items.length = 0 // empty the array
+          this.fetchOrders(params)
+        }, 500)
       }
     }
 
-    onLoad() {}
+    onLoad(params) {
+      this.orderStatus = params.status
+      this.$ensureLogin()
+        .then(() => {
+          params.page = this.page
+          return this.fetchOrders(params)
+        })
+    }
+
+    onReachBottom() {
+      if (this.isNoMore) {
+        return
+      }
+      let params = {
+        q: this.inputVal,
+        page: this.page + 1
+      }
+      this.fetchOrders(params)
+    }
+
+    fetchOrders(params) {
+      this.loading = true
+      this.$apply()
+      let searchParams = Object.assign({
+        status: this.orderStatus,
+        page_size: this.pageSize
+      }, params)
+      return this.$get({
+        url: '/oscar/history/orders/',
+        data: searchParams
+      }).then(({data}) => {
+        this.totalCount = data.count
+        for (let item of data.results) {
+          item.datePlacedStr = new Date(item.date_placed)
+                                  .toLocaleString('zh-hans', {hour12: false})
+          this.items.push(item)
+        }
+        this.page = params.page
+      }).catch(() => {
+        wepy.showModal({
+          title: '错误',
+          content: '获取订单列表失败, 请稍后重试',
+          showCancel: false
+        })
+      }).finally(() => {
+        this.loading = false
+        this.$apply()
+      })
+    }
   }
-
 </script>
+
 <style>
-
-
 </style>

@@ -4,10 +4,11 @@
       <view class="page__title">
         倒计时
         <view class="circle-box">
-          <canvas class="circle" style="width:200px; height:200px; position: absolute;" canvas-id="canvasArc"
+          <canvas class="circle" style="width:200px; height:200px; position:absolute;" canvas-id="canvasCircle"
           binderror="canvasIdErrorCallback">
           </canvas>
-          <canvas class="circle" style="z-index: -5; width:200px; height:200px;" canvas-id="canvasCircle"
+          <!-- drawing afterwards will display higher z-index -->
+          <canvas class="circle" style="width:200px; height:200px;" canvas-id="canvasArc"
           binderror="canvasIdErrorCallback">
           </canvas>
           <view class="draw_btn">{{remainMinStr}}<text class="weui-media-box__desc" style="display: inline;">min</text>
@@ -235,11 +236,11 @@
       })
     }
     drawArc(s, e) {
-      this.arcCtx.setFillStyle('white')
+      // this.arcCtx.setFillStyle('white')
       this.arcCtx.clearRect(0, 0, 200, 200)
       this.arcCtx.draw()
       this.arcCtx.setLineWidth(6)
-      this.arcCtx.setStrokeStyle('#eaeaea')
+      this.arcCtx.setStrokeStyle('#999999')
       this.arcCtx.setLineCap('round')
       this.arcCtx.beginPath()
       // void ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);

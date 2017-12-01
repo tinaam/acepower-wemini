@@ -207,7 +207,7 @@
           }).then(({data}) => {
             // launch wx payment dialog
             return wepy.showModal({
-              title: '模拟支付',
+              title: '支付',
               content: `${this.order.currency} ${this.total_incl_tax}`,
               showCancel: false
             })

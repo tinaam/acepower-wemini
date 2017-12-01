@@ -11,7 +11,9 @@
           <canvas class="circle" style="width:200px; height:200px;" canvas-id="canvasArc"
           binderror="canvasIdErrorCallback">
           </canvas>
-          <view class="draw_btn">{{remainMinStr}}<text class="weui-media-box__desc" style="display: inline;">min</text>
+          <view class="remainMins">{{remainMinStr}}<text class="weui-media-box__desc" style="display: inline;">min</text>
+          </view>
+          <view class="remainSecs">{{remainSecStr}}<text class="weui-media-box__desc" style="display: inline;">sec</text>
           </view>
         </view>
       </view>
@@ -62,7 +64,7 @@
   margin: auto;
 }
 
-.draw_btn {
+.remainMins {
   width: 35vw;
   position: absolute;
   top: 23vw;
@@ -71,6 +73,16 @@
   margin: auto;
   border-radius: 5vw;
   font-size: 200rpx;
+}
+.remainSecs {
+  width:15vw;
+  position:absolute;
+  top:55vw;
+  right:0;
+  left:20vw;
+  margin:auto;
+  border-radius:5vw;
+  font-size:50rpx;
 }
 </style>
 
@@ -86,8 +98,9 @@
     }
     data = {
       arcCtx: wepy.createCanvasContext('canvasArc'),
+      timeoutRef: null,
       remainTsCount: 0,
-      checkIntervalSec: 60,
+      checkIntervalSec: 1,
       centerX: 100,
       centerY: 100,
       radius: 96,
@@ -96,11 +109,21 @@
       order: null
     }
     computed = {
+      remainSecStr () {
+        if (!this.order) {
+          return '00'
+        }
+        let result = Math.floor(this.remainTsCount / 1000) % 60
+        if (result < 10) {
+          result = '0' + result
+        }
+        return '' + result
+      },
       remainMinStr () {
         if (!this.order) {
           return '00'
         }
-        let result = Math.round(this.remainTsCount / 60 / 1000)
+        let result = Math.floor(Math.floor(this.remainTsCount / 1000) / 60)
         if (result < 10) {
           result = '0' + result
         }
@@ -192,48 +215,57 @@
         this.$apply()
       }
     }
-    drawCircle () {
+    drawCircle(accumulator = 0) {
       if (!this.order) {
         // avoid polling the server in vain
         return
       }
-      this.$get({
-        url: `/oscar/asset/orders/${this.order.id}/shipping-info`
-      }).then(({data}) => {
-        if (data.delivered) {
-          this.remainTsCount = 0
-          this.displayThankYouMessage()
-          return
-        }
-        let shippedTs = new Date(data.shipped_time).getTime()
-        if (isNaN(shippedTs)) {
-          // may not be ready to get shipping info
-          this.drawCircle()
-          return
-        }
-        let totalTs = this.unit_duration_min * 60 * 1000
-        let nowTs = new Date().getTime()
-        this.remainTsCount = totalTs - (nowTs - shippedTs)
-        if (this.remainTsCount < 0) {
-          this.remainTsCount = 0
-        }
-        let endAngle = (1 - this.remainTsCount / totalTs) * 2 * Math.PI + this.startAngle
-        this.drawArc(this.startAngle, endAngle)
-        if (this.remainTsCount <= 0) {
-          this.displayThankYouMessage()
-          return
-        }
-        // trigger another drawCircle request
+      if (accumulator++ % 60 !== 0) {
         this.timeoutRef = setTimeout(() => {
-          this.drawCircle()
-        }, this.checkIntervalSec * 1000) // we redraw this clock every minute
-      }).catch(() => {
-        this.timeoutRef = setTimeout(() => {
-          this.drawCircle()
-        }, this.checkIntervalSec * 1000) // we redraw this clock every minute
-      }).finally(() => {
-        this.$apply()
-      })
+          if (this.remainTsCount <= 0) {
+            this.remainTsCount = 0
+            this.displayThankYouMessage()
+            return
+          }
+          this.remainTsCount -= 1000
+          this.$apply()
+          this.drawCircle(accumulator)
+        }, 1000)
+      } else {
+        this.$get({
+          url: `/oscar/asset/orders/${this.order.id}/shipping-info`
+        }).then(({data}) => {
+          if (data.delivered) {
+            this.remainTsCount = 0
+            this.displayThankYouMessage()
+            return
+          }
+          let shippedTs = new Date(data.shipped_time).getTime()
+          if (isNaN(shippedTs)) {
+            // may not be ready to get shipping info
+            this.drawCircle(accumulator)
+            return
+          }
+          let totalTs = this.unit_duration_min * 60 * 1000
+          let nowTs = new Date().getTime()
+          this.remainTsCount = totalTs - (nowTs - shippedTs)
+          if (this.remainTsCount < 0) {
+            this.remainTsCount = 0
+          }
+          let endAngle = (1 - this.remainTsCount / totalTs) * 2 * Math.PI + this.startAngle
+          this.drawArc(this.startAngle, endAngle)
+          if (this.remainTsCount <= 0) {
+            this.displayThankYouMessage()
+            return
+          }
+          // trigger another drawCircle request
+          this.drawCircle(accumulator)
+        }).catch(() => {
+          this.drawCircle(accumulator)
+        }).finally(() => {
+          this.$apply()
+        })
+      }
     }
     drawArc(s, e) {
       // this.arcCtx.setFillStyle('white')
@@ -253,6 +285,18 @@
         url: `/pages/power/review?order_id=${this.order.id}`
       })
     }
+    // secCountDownTimer() {
+    //   let secInterval = 1000
+    //   clearTimeout(this.secTimeoutRef)
+    //   this.secTimeoutRef = setTimeout(() => {
+    //     this.remainTsCount -= secInterval
+    //     this.$apply()
+    //     if (!this.timeoutRef || this.remainTsCount <= 0) {
+    //       return
+    //     }
+    //     this.secCountDownTimer()
+    //   }, secInterval)
+    // }
   }
 
 </script>

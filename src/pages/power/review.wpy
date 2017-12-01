@@ -46,6 +46,7 @@
           <view class="weui-msg__opr-area">
               <view class="weui-btn-area">
                 <button class="weui-btn" type="primary" @tap="scanQRCode">再次使用</button>
+                <button class="weui-btn" type="default" @tap="goHome">返回首页</button>
               </view>
           </view>
         </view>
@@ -90,6 +91,11 @@
             content: '调用扫描二维码异常',
             showCancel: false
           })
+        })
+      },
+      goHome () {
+        wepy.switchTab({
+          url: '/pages/index'
         })
       }
     }

@@ -43,13 +43,17 @@
       scanQRCode () {
         wepy.scanCode({
           onlyFromCamera: true
-        }).then(({result, path}) => {
-          let url = result
-          if (path) {
-            url = path
-          }
+        }).then(({result}) => {
+          let qs = result.split('?')
+          qs = qs[qs.length - 1]
           wepy.redirectTo({
-            url: url
+            url: `/pages/device/order?${qs}`
+          }).catch(() => {
+            wepy.showModal({
+              title: '异常',
+              content: '异常设备二维码，请重试或者联系前台',
+              showCancel: false
+            })
           })
         }).catch(() => {
           wepy.showModal({

@@ -80,7 +80,23 @@
       timeoutRef: null
     }
     computed = {}
-    onLoad(params) {
+    onLoad(options) {
+      let params = {}
+      if (options.q) {
+        // from qr code scan
+        let qrUrl = decodeURIComponent(options.q)
+        // qrUrl => https://test.com/xxx/?yyy=zzz&aaa=bbb...
+        let qs = qrUrl.split('?')
+        qs = qs[qs.length - 1]
+        // qs => yyy=zzz&aaa=bbb...
+        for (let part of qs.split('&')) {
+          let bits = part.split('=')
+          params[bits[0]] = bits[bits.length - 1]
+        }
+      } else {
+        // from mini app navigation within
+        params = options
+      }
       this.$ensureLogin()
         .then(() => {
           return this.$prepareUserInfo()

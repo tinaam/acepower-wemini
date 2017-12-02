@@ -43,9 +43,9 @@ export default class extends wepy.app {
       'pages/index',
       'pages/user/index',
       'pages/user/history',
-      'pages/power/order',
-      'pages/power/countdown',
-      'pages/power/review'
+      'pages/device/order',
+      'pages/device/countdown',
+      'pages/device/review'
     ],
     window: {
       navigationBarTitleText: 'AcePower',

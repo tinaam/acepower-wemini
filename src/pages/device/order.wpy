@@ -112,7 +112,7 @@
                 this.displayPaymentCountDown()
               } else {
                 wepy.redirectTo({
-                  url: `/pages/power/countdown?order_id=${data.order.id}`
+                  url: `/pages/device/countdown?order_id=${data.order.id}`
                 })
               }
             } else {
@@ -218,7 +218,7 @@
           }).then((res) => {
             // callback between mini and wx server
             wepy.redirectTo({
-              url: `/pages/power/countdown?order_id=${this.order.id}`
+              url: `/pages/device/countdown?order_id=${this.order.id}`
             })
           })
       }
@@ -259,7 +259,7 @@
           showCancel: false
         }).then((res) => {
           wepy.redirectTo({
-            url: `/pages/power/order?sku_code=${this.order.lines[0].asset_location.code}`
+            url: `/pages/device/order?sku_code=${this.order.lines[0].asset_location.code}`
           })
         })
       } else {

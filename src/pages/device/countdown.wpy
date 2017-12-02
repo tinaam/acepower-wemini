@@ -183,7 +183,7 @@
             showCancel: false
           }).then((res) => {
             wepy.redirectTo({
-              url: `/pages/power/countdown?order_id=${params.order_id}`
+              url: `/pages/device/countdown?order_id=${params.order_id}`
             })
           })
         }).finally(() => {
@@ -282,7 +282,7 @@
     }
     displayThankYouMessage() {
       wepy.redirectTo({
-        url: `/pages/power/review?order_id=${this.order.id}`
+        url: `/pages/device/review?order_id=${this.order.id}`
       })
     }
     // secCountDownTimer() {

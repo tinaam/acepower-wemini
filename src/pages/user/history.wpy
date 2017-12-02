@@ -24,7 +24,7 @@
           <view class="weui-media-box weui-media-box_small-appmsg">
             <view class="weui-cells weui-cells_in-small-appmsg">
               <repeat for="{{items}}" key="id" index="index" item="item">
-                <navigator url="/pages/power/review?order_id={{item.id}}" 
+                <navigator url="/pages/device/review?order_id={{item.id}}" 
                   class="weui-cell weui-cell_access" 
                   hover-class="weui-cell_active">
                   <view class="weui-media-box__bd weui-media-box__bd_in-appmsg">
@@ -90,6 +90,7 @@
       },
       clearInput() {
         this.inputVal = ''
+        this.fetchOrders({page: 1})
       },
       inputTyping(e) {
         clearTimeout(this.timeoutRef)
